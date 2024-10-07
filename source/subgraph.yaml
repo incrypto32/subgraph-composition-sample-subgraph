@@ -1,0 +1,32 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: UniswapV3Factory
+    network: base
+    source:
+      address: "0xc35dadb65012ec5796536bd9864ed8773abc74c4"
+      abi: UniswapV3Factory
+      startBlock: 1759510
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - FeeAmountEnabled
+        - OwnerChanged
+        - PoolCreated
+      abis:
+        - name: UniswapV3Factory
+          file: ./abis/UniswapV3Factory.json
+      eventHandlers:
+        - event: FeeAmountEnabled(indexed uint24,indexed int24)
+          handler: handleFeeAmountEnabled
+        - event: OwnerChanged(indexed address,indexed address)
+          handler: handleOwnerChanged
+        - event: PoolCreated(indexed address,indexed address,indexed uint24,int24,address)
+          handler: handlePoolCreated
+      file: ./src/uniswap-v-3-factory.ts

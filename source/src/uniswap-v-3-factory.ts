@@ -52,6 +52,9 @@ export function handlePoolCreated(event: PoolCreatedEvent): void {
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
   entity.transactionHash = event.transaction.hash;
+  entity.transactionFrom = event.transaction.from;
+  entity.logIndex = event.logIndex;
+  entity.transactionGasPrice = event.transaction.gasPrice;
 
   PoolTemplate.create(event.params.pool);
 

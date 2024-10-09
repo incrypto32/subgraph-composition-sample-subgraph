@@ -26,4 +26,237 @@ type PoolCreated @entity(immutable: true) {
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+  transactionFrom: Bytes!
+  transactionGasPrice: BigInt!
+  logIndex: BigInt!
+}
+
+type Burn @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  tickLower: Int! # int24
+  tickUpper: Int! # int24
+  amount: BigInt! # uint128
+  amount0: BigInt! # uint256
+  amount1: BigInt! # uint256
+  poolAddress: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type PoolCollect @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  recipient: Bytes! # address
+  tickLower: Int! # int24
+  tickUpper: Int! # int24
+  amount0: BigInt! # uint128
+  amount1: BigInt! # uint128
+  poolAddress: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type CollectProtocol @entity(immutable: true) {
+  id: Bytes!
+  sender: Bytes! # address
+  recipient: Bytes! # address
+  amount0: BigInt! # uint128
+  amount1: BigInt! # uint128
+  poolAddress: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type Flash @entity(immutable: true) {
+  id: Bytes!
+  sender: Bytes! # address
+  recipient: Bytes! # address
+  amount0: BigInt! # uint256
+  amount1: BigInt! # uint256
+  paid0: BigInt! # uint256
+  paid1: BigInt! # uint256
+  poolAddress: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type IncreaseObservationCardinalityNext @entity(immutable: true) {
+  id: Bytes!
+  observationCardinalityNextOld: Int! # uint16
+  observationCardinalityNextNew: Int! # uint16
+  poolAddress: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type Initialize @entity(immutable: true) {
+  id: Bytes!
+  sqrtPriceX96: BigInt! # uint160
+  tick: Int! # int24
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  poolAddress: Bytes!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type Mint @entity(immutable: true) {
+  id: Bytes!
+  sender: Bytes! # address
+  owner: Bytes! # address
+  tickLower: Int! # int24
+  tickUpper: Int! # int24
+  amount: BigInt! # uint128
+  amount0: BigInt! # uint256
+  amount1: BigInt! # uint256
+  poolAddress: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type SetFeeProtocol @entity(immutable: true) {
+  id: Bytes!
+  feeProtocol0Old: Int! # uint8
+  feeProtocol1Old: Int! # uint8
+  feeProtocol0New: Int! # uint8
+  feeProtocol1New: Int! # uint8
+  poolAddress: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type Swap @entity(immutable: true) {
+  id: Bytes!
+  sender: Bytes! # address
+  recipient: Bytes! # address
+  amount0: BigInt! # int256
+  amount1: BigInt! # int256
+  sqrtPriceX96: BigInt! # uint160
+  liquidity: BigInt! # uint128
+  tick: Int! # int24
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+  poolAddress: Bytes!
+}
+
+type Approval @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  approved: Bytes! # address
+  tokenId: BigInt! # uint256
+  address: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type ApprovalForAll @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  operator: Bytes! # address
+  approved: Boolean! # bool
+  address: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type NonfungiblePositionManagerCollect @entity(immutable: true) {
+  id: Bytes!
+  tokenId: BigInt! # uint256
+  recipient: Bytes! # address
+  amount0: BigInt! # uint256
+  amount1: BigInt! # uint256
+  address: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type DecreaseLiquidity @entity(immutable: true) {
+  id: Bytes!
+  tokenId: BigInt! # uint256
+  liquidity: BigInt! # uint128
+  amount0: BigInt! # uint256
+  amount1: BigInt! # uint256
+  address: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type IncreaseLiquidity @entity(immutable: true) {
+  id: Bytes!
+  tokenId: BigInt! # uint256
+  liquidity: BigInt! # uint128
+  amount0: BigInt! # uint256
+  amount1: BigInt! # uint256
+  address: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
+}
+
+type Transfer @entity(immutable: true) {
+  id: Bytes!
+  from: Bytes! # address
+  to: Bytes! # address
+  tokenId: BigInt! # uint256
+  address: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+  transactionFrom: Bytes!
+  logIndex: BigInt!
+  transactionGasPrice: BigInt!
 }

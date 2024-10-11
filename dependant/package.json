@@ -14,7 +14,7 @@
     "test": "graph test -r",
     "create-local": "graph create --node http://localhost:8020/ sushiswap/v3-ethereum",
     "remove-local": "graph remove --node http://localhost:8020/ sushiswap/v3-ethereum",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 sushiswap/v3-ethereum"
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://api.thegraph.com/ipfs sushiswap/v3-ethereum"
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "0.79.0-alpha-20241010142217-5c831cf",

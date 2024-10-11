@@ -157,3 +157,4 @@ export function handlePoolCreated(event: EntityTrigger): void {
     factory.save();
   }
 }
+

@@ -1,11 +1,5 @@
 /* eslint-disable prefer-const */
-import {
-  Collect,
-  DecreaseLiquidity,
-  IncreaseLiquidity,
-  NonfungiblePositionManager,
-  Transfer,
-} from '../../generated/NonfungiblePositionManager/NonfungiblePositionManager';
+import { NonfungiblePositionManager } from '../../generated/Factory/NonfungiblePositionManager';
 import {
   Bundle,
   DecreaseEvent,
@@ -18,9 +12,8 @@ import { ADDRESS_ZERO, factoryContract, ZERO_BD, ZERO_BI } from '../constants';
 import {
   Address,
   BigInt,
-  Bytes,
   Entity,
-  ethereum,
+  log,
 } from '@graphprotocol/graph-ts';
 import { convertTokenToDecimal, loadTransaction } from '../utils';
 import { EntityOp, EntityTrigger } from '../utils/entityTrigger';
@@ -169,9 +162,8 @@ export function handleIncreaseLiquidity(event: EntityTrigger): void {
     let newDepositUSD = amount0
       .times(token0.derivedETH.times(bundle.ethPriceUSD))
       .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)));
-    position.amountDepositedUSD = position.amountDepositedUSD.plus(
-      newDepositUSD,
-    );
+    position.amountDepositedUSD =
+      position.amountDepositedUSD.plus(newDepositUSD);
 
     updateFeeVars(position, entity, tokenIdParam);
 
@@ -231,9 +223,8 @@ export function handleDecreaseLiquidity(event: EntityTrigger): void {
     let newWithdrawUSD = amount0
       .times(token0.derivedETH.times(bundle.ethPriceUSD))
       .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)));
-    position.amountWithdrawnUSD = position.amountWithdrawnUSD.plus(
-      newWithdrawUSD,
-    );
+    position.amountWithdrawnUSD =
+      position.amountWithdrawnUSD.plus(newWithdrawUSD);
 
     position = updateFeeVars(position, entity, tokenIdParam);
     position.save();
@@ -276,9 +267,8 @@ export function handleCollect(event: EntityTrigger): void {
     let newCollectUSD = amount0
       .times(token0.derivedETH.times(bundle.ethPriceUSD))
       .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)));
-    position.amountCollectedUSD = position.amountCollectedUSD.plus(
-      newCollectUSD,
-    );
+    position.amountCollectedUSD =
+      position.amountCollectedUSD.plus(newCollectUSD);
 
     position = updateFeeVars(position, entity, tokenIdParam);
     position.save();

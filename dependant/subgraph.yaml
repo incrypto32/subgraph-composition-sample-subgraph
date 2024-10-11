@@ -35,11 +35,11 @@ dataSources:
           handler: handleIncreaseLiquidity
         - entity: DecreaseLiquidity
           handler: handleDecreaseLiquidity
-        - entity: Collect
+        - entity: NonfungiblePositionManagerCollect
           handler: handleCollect
         - entity: Transfer
           handler: handleTransfer
-        - entity: Initialize(uint160,int24)
+        - entity: Initialize
           handler: handleInitialize
         - entity: Swap
           handler: handleSwap

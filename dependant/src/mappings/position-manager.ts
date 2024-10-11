@@ -23,10 +23,10 @@ import {
   ethereum,
 } from '@graphprotocol/graph-ts';
 import { convertTokenToDecimal, loadTransaction } from '../utils';
-import { EntityOp, EntityTrigger } from 'src/utils/entityTrigger';
+import { EntityOp, EntityTrigger } from '../utils/entityTrigger';
 
 function getPosition(entity: Entity, tokenId: BigInt): Position | null {
-  let addressParam = entity.getBytes('address');
+  let addressParam = Address.fromBytes(entity.getBytes('address'));
   let position = Position.load(tokenId.toString());
   if (position === null) {
     let contract = NonfungiblePositionManager.bind(addressParam);
@@ -83,7 +83,7 @@ function updateFeeVars(
   entity: Entity,
   tokenId: BigInt,
 ): Position {
-  let address = entity.getBytes('address');
+  let address = Address.fromBytes(entity.getBytes('address'));
   let positionManagerContract = NonfungiblePositionManager.bind(address);
   let positionResult = positionManagerContract.try_positions(tokenId);
   if (!positionResult.reverted) {
@@ -173,11 +173,11 @@ export function handleIncreaseLiquidity(event: EntityTrigger): void {
       newDepositUSD,
     );
 
-    updateFeeVars(position!, entity, tokenIdParam);
+    updateFeeVars(position, entity, tokenIdParam);
 
     position.save();
 
-    savePositionSnapshot(position!, entity);
+    savePositionSnapshot(position, entity);
   }
 }
 
@@ -235,9 +235,9 @@ export function handleDecreaseLiquidity(event: EntityTrigger): void {
       newWithdrawUSD,
     );
 
-    position = updateFeeVars(position!, entity, tokenIdParam);
+    position = updateFeeVars(position, entity, tokenIdParam);
     position.save();
-    savePositionSnapshot(position!, entity);
+    savePositionSnapshot(position, entity);
   }
 }
 
@@ -280,9 +280,9 @@ export function handleCollect(event: EntityTrigger): void {
       newCollectUSD,
     );
 
-    position = updateFeeVars(position!, entity, tokenIdParam);
+    position = updateFeeVars(position, entity, tokenIdParam);
     position.save();
-    savePositionSnapshot(position!, entity);
+    savePositionSnapshot(position, entity);
   }
 }
 
@@ -301,6 +301,6 @@ export function handleTransfer(event: EntityTrigger): void {
     position.owner = toParam;
     position.save();
 
-    savePositionSnapshot(position!, entity);
+    savePositionSnapshot(position, entity);
   }
 }

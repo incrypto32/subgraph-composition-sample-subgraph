@@ -14,16 +14,16 @@ import {
   fetchTokenTotalSupply,
   fetchTokenDecimals,
 } from '../utils/token';
-import { log, BigInt } from '@graphprotocol/graph-ts';
-import { EntityOp, EntityTrigger } from 'src/utils/entityTrigger';
+import { log, BigInt, Address } from '@graphprotocol/graph-ts';
+import { EntityOp, EntityTrigger } from '../utils/entityTrigger';
 
 export function handlePoolCreated(event: EntityTrigger): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let poolParam = entity.getBytes('pool');
     let feeParam = entity.getI32('fee');
-    let token0Param = entity.getBytes('token0');
-    let token1Param = entity.getBytes('token1');
+    let token0Param = Address.fromBytes(entity.getBytes('token0'));
+    let token1Param = Address.fromBytes(entity.getBytes('token1'));
     let blockTimestamp = entity.getBigInt('blockTimestamp');
     let blockNumber = entity.getBigInt('blockNumber');
 

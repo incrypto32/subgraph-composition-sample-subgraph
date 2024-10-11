@@ -13,22 +13,14 @@ import {
 } from '../../generated/schema';
 import { Pool as PoolABI } from '../../generated/Factory/Pool';
 import {
+  Address,
   BigDecimal,
   BigInt,
   Entity,
   ethereum,
   log,
 } from '@graphprotocol/graph-ts';
-import {
-  Burn as BurnEvent,
-  Flash as FlashEvent,
-  Initialize,
-  Mint as MintEvent,
-  Swap as SwapEvent,
-  Collect as CollectEvent,
-  CollectProtocol as CollectProtocolEvent,
-  SetFeeProtocol as ProtocolFeeEvent,
-} from '../../generated/templates/Pool/Pool';
+
 import { convertTokenToDecimal, loadTransaction, safeDiv } from '../utils';
 import { FACTORY_ADDRESS, ONE_BI, ZERO_BD, ZERO_BI } from '../constants';
 import {
@@ -46,12 +38,12 @@ import {
   updateUniswapDayData,
 } from '../utils/intervalUpdates';
 import { createTick, feeTierToTickSpacing } from '../utils/tick';
-import { EntityOp, EntityTrigger } from 'src/utils/entityTrigger';
+import { EntityOp, EntityTrigger } from '../utils/entityTrigger';
 
 export function handleInitialize(event: EntityTrigger): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
-    let poolAddressParam = entity.getBytes('poolAddress');
+    let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
     let sqrtPriceX96Param = entity.getBigInt('sqrtPriceX96');
     let tickParam = entity.getI32('tick');
 
@@ -237,15 +229,15 @@ export function handleMint(event: EntityTrigger): void {
   mint.save();
 
   // Update inner tick vars and save the ticks
-  updateTickFeeVarsAndSave(lowerTick!, entity);
-  updateTickFeeVarsAndSave(upperTick!, entity);
+  updateTickFeeVarsAndSave(lowerTick, entity);
+  updateTickFeeVarsAndSave(upperTick, entity);
 }
 
 // Note: this handler need not adjust TVL because that is accounted for in the handleCollect handler
 export function handleBurn(event: EntityTrigger): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
-    let poolAddressParam = entity.getBytes('poolAddress');
+    let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
     let amount0Param = entity.getBigInt('amount0');
     let amount1Param = entity.getBigInt('amount1');
     let amountParam = entity.getBigInt('amount');
@@ -331,8 +323,8 @@ export function handleBurn(event: EntityTrigger): void {
     updateTokenDayData(token1 as Token, entity);
     updateTokenHourData(token0 as Token, entity);
     updateTokenHourData(token1 as Token, entity);
-    updateTickFeeVarsAndSave(lowerTick!, entity);
-    updateTickFeeVarsAndSave(upperTick!, entity);
+    updateTickFeeVarsAndSave(lowerTick, entity);
+    updateTickFeeVarsAndSave(upperTick, entity);
 
     token0.save();
     token1.save();
@@ -345,7 +337,7 @@ export function handleBurn(event: EntityTrigger): void {
 export function handleSwap(event: EntityTrigger): void {
   if (event.entityOp == EntityOp.Create) {
     let entity = event.entity;
-    let poolAddressParam = entity.getBytes('poolAddress');
+    let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
     let amount0Param = entity.getBigInt('amount0');
     let amount1Param = entity.getBigInt('amount1');
     let senderParam = entity.getBytes('sender');
@@ -935,7 +927,7 @@ export function handleSetProtocolFee(event: ProtocolFeeEvent): void {
 }
 
 function updateTickFeeVarsAndSave(tick: Tick, entity: Entity): void {
-  let poolAddress = entity.getBytes('poolAddress');
+  let poolAddress = Address.fromBytes(entity.getBytes('poolAddress'));
   // not all ticks are initialized so obtaining null is expected behavior
   let poolContract = PoolABI.bind(poolAddress);
   let tickResult = poolContract.ticks(tick.tickIdx.toI32());
@@ -943,7 +935,7 @@ function updateTickFeeVarsAndSave(tick: Tick, entity: Entity): void {
   tick.feeGrowthOutside1X128 = tickResult.value3;
   tick.save();
 
-  updateTickDayData(tick!, entity);
+  updateTickDayData(tick, entity);
 }
 
 function loadTickUpdateFeeVarsAndSave(tickId: i32, event: Entity): void {
@@ -955,6 +947,6 @@ function loadTickUpdateFeeVarsAndSave(tickId: i32, event: Entity): void {
       .concat(tickId.toString()),
   );
   if (tick !== null) {
-    updateTickFeeVarsAndSave(tick!, event);
+    updateTickFeeVarsAndSave(tick, event);
   }
 }

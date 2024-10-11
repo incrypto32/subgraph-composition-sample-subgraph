@@ -17,8 +17,7 @@
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 sushiswap/v3-ethereum"
   },
   "devDependencies": {
-    "abi": "workspace:*",
-    "@graphprotocol/graph-cli": "^0.70.0",
+    "@graphprotocol/graph-cli": "0.79.0-alpha-20241010142217-5c831cf",
     "@graphprotocol/graph-ts": "^0.27.0",
     "assemblyscript": "^0.19.20",
     "matchstick-as": "0.5.0",

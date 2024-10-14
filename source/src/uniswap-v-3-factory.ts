@@ -40,6 +40,7 @@ export function handleOwnerChanged(event: OwnerChangedEvent): void {
 }
 
 export function handlePoolCreated(event: PoolCreatedEvent): void {
+  
   let entity = new PoolCreated(
     event.transaction.hash.concatI32(event.logIndex.toI32()),
   );

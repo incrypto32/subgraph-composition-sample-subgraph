@@ -8,7 +8,8 @@ import {
   Mint as MintEvent,
   SetFeeProtocol as SetFeeProtocolEvent,
   Swap as SwapEvent,
-} from '../generated/UniswapV3Pool/UniswapV3Pool';
+  UniswapV3Pool,
+} from '../generated/templates/UniswapV3Pool/UniswapV3Pool';
 import {
   Burn,
   PoolCollect as Collect,
@@ -121,14 +122,13 @@ export function handleIncreaseObservationCardinalityNext(
   entity.observationCardinalityNextNew =
     event.params.observationCardinalityNextNew;
 
-    entity.poolAddress = event.address;
-    entity.blockNumber = event.block.number;
-    entity.blockTimestamp = event.block.timestamp;
-    entity.transactionHash = event.transaction.hash;
-    entity.transactionFrom = event.transaction.from;
-    entity.logIndex = event.logIndex;
-    entity.transactionGasPrice = event.transaction.gasPrice;
-
+  entity.poolAddress = event.address;
+  entity.blockNumber = event.block.number;
+  entity.blockTimestamp = event.block.timestamp;
+  entity.transactionHash = event.transaction.hash;
+  entity.transactionFrom = event.transaction.from;
+  entity.logIndex = event.logIndex;
+  entity.transactionGasPrice = event.transaction.gasPrice;
 
   entity.save();
 }
@@ -147,7 +147,6 @@ export function handleInitialize(event: InitializeEvent): void {
   entity.transactionFrom = event.transaction.from;
   entity.logIndex = event.logIndex;
   entity.transactionGasPrice = event.transaction.gasPrice;
-
 
   entity.save();
 }
@@ -191,7 +190,6 @@ export function handleSetFeeProtocol(event: SetFeeProtocolEvent): void {
   entity.transactionFrom = event.transaction.from;
   entity.logIndex = event.logIndex;
   entity.transactionGasPrice = event.transaction.gasPrice;
-
 
   entity.save();
 }

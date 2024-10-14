@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "0.79.0-alpha-20241010142217-5c831cf",
-    "@graphprotocol/graph-ts": "^0.27.0",
+    "@graphprotocol/graph-ts": "^0.35.1",
     "assemblyscript": "^0.19.20",
     "matchstick-as": "0.5.0",
     "wabt": "1.0.24"

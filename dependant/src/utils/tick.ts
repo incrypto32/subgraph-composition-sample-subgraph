@@ -2,7 +2,6 @@
 import { BigDecimal, BigInt } from '@graphprotocol/graph-ts';
 import { bigDecimalExponated, safeDiv } from '.';
 import { Tick } from '../../generated/schema';
-import { Mint as MintEvent } from '../../generated/templates/Pool/Pool';
 import { ONE_BD, ZERO_BD, ZERO_BI } from '../constants';
 
 export function createTick(

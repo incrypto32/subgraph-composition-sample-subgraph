@@ -428,12 +428,10 @@ export function handleCollect(event: EntityTrigger): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let tokenIdParam = entity.getBigInt('tokenId');
-    let transactionHashParam = entity.getBytes('transactionHash');
-    let logIndexParam = entity.getBigInt('logIndex');
     let amount0Param = entity.getBigInt('amount0');
     let amount1Param = entity.getBigInt('amount1');
-    let blockTimestampParam = entity.getBigInt('blockTimestamp');
-    let liquidityParam = entity.getBigInt('liquidity');
+
+
 
     let position = getPosition(entity, tokenIdParam);
     // position was not able to be fetched
@@ -1231,7 +1229,6 @@ export function handleProtocolCollect(event: EntityTrigger): void {
     let poolAddressParam = event.entity.getBytes('poolAddress');
     let amount0Param = event.entity.getBigInt('amount0');
     let amount1Param = event.entity.getBigInt('amount1');
-    let ownerParam = event.entity.getBytes('owner');
     let recipientParam = event.entity.getBytes('recipient');
     let logIndexParam = event.entity.getBigInt('logIndex');
     let blockTimestampParam = event.entity.getBigInt('blockTimestamp');

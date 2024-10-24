@@ -15,6 +15,14 @@ import {
   Transfer,
 } from '../generated/schema';
 
+import { UniswapV3Pool } from '../generated/UniswapV3Factory/UniswapV3Pool';
+import { ERC20 } from '../generated/UniswapV3Factory/ERC20';
+import { ERC20NameBytes } from '../generated/UniswapV3Factory/ERC20NameBytes';
+import { ERC20SymbolBytes } from '../generated/UniswapV3Factory/ERC20SymbolBytes';
+import { NonfungiblePositionManager } from '../generated/UniswapV3Factory/NonfungiblePositionManager';
+import { UniswapV3Factory } from '../generated/UniswapV3Factory/UniswapV3Factory';
+
+
 export function handleApproval(event: ApprovalEvent): void {
   let entity = new Approval(
     event.transaction.hash.concatI32(event.logIndex.toI32()),

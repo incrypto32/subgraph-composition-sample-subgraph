@@ -1,4 +1,4 @@
-specVersion: 1.0.0
+specVersion: 1.2.0
 schema:
   file: ./schema.graphql
 dataSources:
@@ -6,7 +6,7 @@ dataSources:
     name: UniswapV3Factory
     network: base
     source:
-      address: "0xc35dadb65012ec5796536bd9864ed8773abc74c4"
+      address: '0xc35dadb65012ec5796536bd9864ed8773abc74c4'
       abi: UniswapV3Factory
       startBlock: 1759510
     mapping:
@@ -20,19 +20,38 @@ dataSources:
       abis:
         - name: UniswapV3Factory
           file: ./abis/UniswapV3Factory.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: UniswapV3Pool
+          file: ./abis/UniswapV3Pool.json
+        - name: NonfungiblePositionManager
+          file: ./abis/NonfungiblePositionManager.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
       eventHandlers:
         - event: FeeAmountEnabled(indexed uint24,indexed int24)
           handler: handleFeeAmountEnabled
         - event: OwnerChanged(indexed address,indexed address)
           handler: handleOwnerChanged
-        - event: PoolCreated(indexed address,indexed address,indexed uint24,int24,address)
+        - calls:
+            token0Decimals: 'ERC20[event.params.token0].decimals()'
+            token0Name: 'ERC20[event.params.token0].name()'
+            token0Supply: 'ERC20[event.params.token0].totalSupply()'
+            token0Symbol: 'ERC20[event.params.token0].symbol()'
+            token1Decimals: 'ERC20[event.params.token1].decimals()'
+            token1Name: 'ERC20[event.params.token1].name()'
+            token1Supply: 'ERC20[event.params.token1].totalSupply()'
+            token1Symbol: 'ERC20[event.params.token1].symbol()'
+          event: PoolCreated(indexed address,indexed address,indexed uint24,int24,address)
           handler: handlePoolCreated
       file: ./src/uniswap-v-3-factory.ts
   - kind: ethereum
     name: NonfungiblePositionManager
     network: base
     source:
-      address: "0x80C7DD17B01855a6D2347444a0FCC36136a314de"
+      address: '0x80C7DD17B01855a6D2347444a0FCC36136a314de'
       abi: NonfungiblePositionManager
       startBlock: 1759765
     mapping:
@@ -54,11 +73,21 @@ dataSources:
           handler: handleApproval
         - event: ApprovalForAll(indexed address,indexed address,bool)
           handler: handleApprovalForAll
-        - event: Collect(indexed uint256,address,uint256,uint256)
+        - calls:
+            positions: >-
+              NonfungiblePositionManager[event.address].positions(event.params.tokenId)
+          event: 'Collect(indexed uint256,address,uint256,uint256)'
           handler: handleCollect
-        - event: DecreaseLiquidity(indexed uint256,uint128,uint256,uint256)
+          receipt: true
+        - calls:
+            positions: >-
+              NonfungiblePositionManager[event.address].positions(event.params.tokenId)
+          event: 'DecreaseLiquidity(indexed uint256,uint128,uint256,uint256)'
           handler: handleDecreaseLiquidity
-        - event: IncreaseLiquidity(indexed uint256,uint128,uint256,uint256)
+        - calls:
+            positions: >-
+              NonfungiblePositionManager[event.address].positions(event.params.tokenId)
+          event: 'IncreaseLiquidity(indexed uint256,uint128,uint256,uint256)'
           handler: handleIncreaseLiquidity
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
@@ -87,22 +116,37 @@ templates:
         - name: UniswapV3Pool
           file: ./abis/UniswapV3Pool.json
       eventHandlers:
-        - event: Burn(indexed address,indexed int24,indexed int24,uint128,uint256,uint256)
+        - event: >-
+            Burn(indexed address,indexed int24,indexed
+            int24,uint128,uint256,uint256)
           handler: handleBurn
         - event: Collect(indexed address,address,indexed int24,indexed int24,uint128,uint128)
           handler: handleCollect
         - event: CollectProtocol(indexed address,indexed address,uint128,uint128)
           handler: handleCollectProtocol
-        - event: Flash(indexed address,indexed address,uint256,uint256,uint256,uint256)
+        - calls:
+            Flash.feeGrowthGlobal0X128: 'UniswapV3Pool[event.address].feeGrowthGlobal0X128()'
+            Flash.feeGrowthGlobal1X128: 'UniswapV3Pool[event.address].feeGrowthGlobal1X128()'
+          event: >-
+            Flash(indexed address,indexed
+            address,uint256,uint256,uint256,uint256)
           handler: handleFlash
         - event: IncreaseObservationCardinalityNext(uint16,uint16)
           handler: handleIncreaseObservationCardinalityNext
         - event: Initialize(uint160,int24)
           handler: handleInitialize
-        - event: Mint(address,indexed address,indexed int24,indexed int24,uint128,uint256,uint256)
+        - event: >-
+            Mint(address,indexed address,indexed int24,indexed
+            int24,uint128,uint256,uint256)
           handler: handleMint
+          receipt: true
         - event: SetFeeProtocol(uint8,uint8,uint8,uint8)
           handler: handleSetFeeProtocol
-        - event: Swap(indexed address,indexed address,int256,int256,uint160,uint128,int24)
+        - calls:
+            Swap.feeGrowthGlobal0X128: 'UniswapV3Pool[event.address].feeGrowthGlobal0X128()'
+            Swap.feeGrowthGlobal1X128: 'UniswapV3Pool[event.address].feeGrowthGlobal1X128()'
+          event: >-
+            Swap(indexed address,indexed
+            address,int256,int256,uint160,uint128,int24)
           handler: handleSwap
       file: ./src/uniswap-v-3-pool.ts

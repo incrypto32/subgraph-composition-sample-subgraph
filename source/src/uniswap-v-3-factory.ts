@@ -3,6 +3,12 @@ import {
   OwnerChanged as OwnerChangedEvent,
   PoolCreated as PoolCreatedEvent,
 } from '../generated/UniswapV3Factory/UniswapV3Factory';
+import { UniswapV3Pool } from '../generated/UniswapV3Factory/UniswapV3Pool';
+import { ERC20 } from '../generated/UniswapV3Factory/ERC20';
+import { ERC20NameBytes } from '../generated/UniswapV3Factory/ERC20NameBytes';
+import { ERC20SymbolBytes } from '../generated/UniswapV3Factory/ERC20SymbolBytes';
+import { NonfungiblePositionManager } from '../generated/UniswapV3Factory/NonfungiblePositionManager';
+import { UniswapV3Factory } from '../generated/UniswapV3Factory/UniswapV3Factory';
 
 import { UniswapV3Pool as PoolTemplate } from '../generated/templates';
 import {
@@ -40,7 +46,6 @@ export function handleOwnerChanged(event: OwnerChangedEvent): void {
 }
 
 export function handlePoolCreated(event: PoolCreatedEvent): void {
-  
   let entity = new PoolCreated(
     event.transaction.hash.concatI32(event.logIndex.toI32()),
   );

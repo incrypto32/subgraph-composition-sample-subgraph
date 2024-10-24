@@ -8,10 +8,10 @@ import {
   Mint as MintEvent,
   SetFeeProtocol as SetFeeProtocolEvent,
   Swap as SwapEvent,
-  UniswapV3Pool,
 } from '../generated/templates/UniswapV3Pool/UniswapV3Pool';
+
 import {
-  Burn,
+  Burn, 
   PoolCollect as Collect,
   CollectProtocol,
   Flash,
@@ -21,6 +21,13 @@ import {
   SetFeeProtocol,
   Swap,
 } from '../generated/schema';
+
+import { UniswapV3Pool } from '../generated/UniswapV3Factory/UniswapV3Pool';
+import { ERC20 } from '../generated/UniswapV3Factory/ERC20';
+import { ERC20NameBytes } from '../generated/UniswapV3Factory/ERC20NameBytes';
+import { ERC20SymbolBytes } from '../generated/UniswapV3Factory/ERC20SymbolBytes';
+import { NonfungiblePositionManager } from '../generated/UniswapV3Factory/NonfungiblePositionManager';
+import { UniswapV3Factory } from '../generated/UniswapV3Factory/UniswapV3Factory';
 
 export function handleBurn(event: BurnEvent): void {
   let entity = new Burn(
@@ -63,7 +70,6 @@ export function handleCollect(event: CollectEvent): void {
   entity.logIndex = event.logIndex;
   entity.transactionGasPrice = event.transaction.gasPrice;
 
-
   entity.save();
 }
 
@@ -83,7 +89,6 @@ export function handleCollectProtocol(event: CollectProtocolEvent): void {
   entity.transactionFrom = event.transaction.from;
   entity.logIndex = event.logIndex;
   entity.transactionGasPrice = event.transaction.gasPrice;
-
 
   entity.save();
 }
@@ -106,7 +111,6 @@ export function handleFlash(event: FlashEvent): void {
   entity.transactionFrom = event.transaction.from;
   entity.logIndex = event.logIndex;
   entity.transactionGasPrice = event.transaction.gasPrice;
-
 
   entity.save();
 }

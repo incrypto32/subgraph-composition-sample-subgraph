@@ -1,10 +1,10 @@
 import { Entity } from '@graphprotocol/graph-ts';
 
-export class EntityTrigger {
+export class EntityTrigger<T extends Entity> {
   constructor(
-    public entityOp: u32,
+    public entityOp: EntityOp,
     public entityType: string,
-    public entity: Entity,
+    public entity: T, // T is a specific type that extends Entity
   ) {}
 }
 

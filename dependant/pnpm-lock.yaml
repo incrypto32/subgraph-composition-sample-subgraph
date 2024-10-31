@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@graphprotocol/graph-cli':
-        specifier: 0.79.0-alpha-20241010142217-5c831cf
-        version: 0.79.0-alpha-20241010142217-5c831cf(@types/node@22.7.5)(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.6.3)
+        specifier: 0.79.0-alpha-20241030133640-9c60d4d
+        version: 0.79.0-alpha-20241030133640-9c60d4d(@types/node@22.7.5)(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.6.3)
       '@graphprotocol/graph-ts':
         specifier: ^0.35.1
         version: 0.35.1
@@ -100,8 +100,8 @@ packages:
     resolution: {integrity: sha512-yZ0H5e3EpAYKokX/AbtplzlvSxEJY7ZfpvQyDzyODkks0hakAAlDG6fQu1SlDJMWorY7bbq1j7fCiFeTWci6TA==}
     hasBin: true
 
-  '@graphprotocol/graph-cli@0.79.0-alpha-20241010142217-5c831cf':
-    resolution: {integrity: sha512-/vtGCwMto9WQ108S8EB6q9NbfNfyBIHD0xAancrZeoUnZc9cdxlgttVZ7QEP6N0CQfBcXV0Dm1NDhBsdP8zeWg==}
+  '@graphprotocol/graph-cli@0.79.0-alpha-20241030133640-9c60d4d':
+    resolution: {integrity: sha512-oTPqwBI1Dzu4FeeL2mUffL+/32JCM1AaKQUQBY0JPIwAMclLBLNS7I/SB6638ergJpgwX2oKCXGV2v1A/oTR3w==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -1966,7 +1966,7 @@ snapshots:
       graphql-import-node: 0.0.5(graphql@16.9.0)
       js-yaml: 4.1.0
 
-  '@graphprotocol/graph-cli@0.79.0-alpha-20241010142217-5c831cf(@types/node@22.7.5)(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.6.3)':
+  '@graphprotocol/graph-cli@0.79.0-alpha-20241030133640-9c60d4d(@types/node@22.7.5)(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.6.3)':
     dependencies:
       '@float-capital/float-subgraph-uncrashable': 0.0.0-internal-testing.5
       '@oclif/core': 2.8.6(@types/node@22.7.5)(typescript@5.6.3)

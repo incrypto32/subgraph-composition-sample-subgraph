@@ -17,7 +17,7 @@
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://api.thegraph.com/ipfs sushiswap/v3-ethereum"
   },
   "devDependencies": {
-    "@graphprotocol/graph-cli": "0.79.0-alpha-20241010142217-5c831cf",
+    "@graphprotocol/graph-cli": "0.79.0-alpha-20241030133640-9c60d4d",
     "@graphprotocol/graph-ts": "^0.35.1",
     "assemblyscript": "^0.19.20",
     "matchstick-as": "0.5.0",

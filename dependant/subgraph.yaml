@@ -4,10 +4,10 @@ schema:
 dataSources:
   - kind: subgraph
     name: Factory
-    network: base
+    network: scroll
     source:
-      address: 'QmbPZENDFo1HQcocaporuVGn7fXpGgba1hUX5TFbBv69tZ'
-      startBlock: 1759510
+      address: 'QmdXu8byAFCGSDWsB5gMQjWr6GUvEVB7S1hemfxNuomerz'
+      startBlock: 82522
     mapping:
       apiVersion: 0.0.7
       language: wasm/assemblyscript

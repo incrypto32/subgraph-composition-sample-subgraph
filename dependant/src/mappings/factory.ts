@@ -61,8 +61,24 @@ import {
 } from '../utils/intervalUpdates';
 import { createTick, feeTierToTickSpacing } from '../utils/tick';
 import { NonfungiblePositionManager } from '../../generated/Factory/NonfungiblePositionManager';
+import {
+  NonfungiblePositionManagerCollect as CollectTrigger,
+  PoolCollect,
+  DecreaseLiquidity,
+  IncreaseLiquidity,
+  PoolCreated as PoolCreatedEntity,
+  Transfer,
+  Initialize,
+  SetFeeProtocol,
+  CollectProtocol,
+  Mint as MintTrigger,
+  Burn as BurnTrigger,
+  Swap as SwapTrigger,
+} from 'generated/subgraph-QmdXu8byAFCGSDWsB5gMQjWr6GUvEVB7S1hemfxNuomerz';
 
-export function handlePoolCreated(event: EntityTrigger): void {
+export function handlePoolCreated(
+  event: EntityTrigger<PoolCreatedEntity>,
+): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let poolParam = entity.getBytes('pool');
@@ -298,7 +314,9 @@ function savePositionSnapshot(position: Position, entity: Entity): void {
   positionSnapshot.save();
 }
 
-export function handleIncreaseLiquidity(event: EntityTrigger): void {
+export function handleIncreaseLiquidity(
+  event: EntityTrigger<IncreaseLiquidity>,
+): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let blockTimestampParam = entity.getBigInt('blockTimestamp');
@@ -365,7 +383,9 @@ export function handleIncreaseLiquidity(event: EntityTrigger): void {
   }
 }
 
-export function handleDecreaseLiquidity(event: EntityTrigger): void {
+export function handleDecreaseLiquidity(
+  event: EntityTrigger<DecreaseLiquidity>,
+): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let tokenIdParam = entity.getBigInt('tokenId');
@@ -424,14 +444,12 @@ export function handleDecreaseLiquidity(event: EntityTrigger): void {
   }
 }
 
-export function handleCollect(event: EntityTrigger): void {
+export function handleCollect(event: EntityTrigger<CollectTrigger>): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let tokenIdParam = entity.getBigInt('tokenId');
     let amount0Param = entity.getBigInt('amount0');
     let amount1Param = entity.getBigInt('amount1');
-
-
 
     let position = getPosition(entity, tokenIdParam);
     // position was not able to be fetched
@@ -466,7 +484,7 @@ export function handleCollect(event: EntityTrigger): void {
   }
 }
 
-export function handleTransfer(event: EntityTrigger): void {
+export function handleTransfer(event: EntityTrigger<Transfer>): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let tokenIdParam = entity.getBigInt('tokenId');
@@ -487,7 +505,7 @@ export function handleTransfer(event: EntityTrigger): void {
 
 // ===================================================================== Pool
 
-export function handleInitialize(event: EntityTrigger): void {
+export function handleInitialize(event: EntityTrigger<Initialize>): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
@@ -522,7 +540,7 @@ export function handleInitialize(event: EntityTrigger): void {
   }
 }
 
-export function handleMint(event: EntityTrigger): void {
+export function handleMint(event: EntityTrigger<MintTrigger>): void {
   if (event.entityOp === EntityOp.Create) {
     let bundle = Bundle.load('1') as Bundle;
     let entity = event.entity;
@@ -685,7 +703,7 @@ export function handleMint(event: EntityTrigger): void {
 }
 
 // Note: this handler need not adjust TVL because that is accounted for in the handleCollect handler
-export function handleBurn(event: EntityTrigger): void {
+export function handleBurn(event: EntityTrigger<BurnTrigger>): void {
   if (event.entityOp === EntityOp.Create) {
     let entity = event.entity;
     let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
@@ -785,7 +803,7 @@ export function handleBurn(event: EntityTrigger): void {
   }
 }
 
-export function handleSwap(event: EntityTrigger): void {
+export function handleSwap(event: EntityTrigger<SwapTrigger>): void {
   if (event.entityOp == EntityOp.Create) {
     let entity = event.entity;
     let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
@@ -1073,23 +1091,23 @@ export function handleSwap(event: EntityTrigger): void {
   }
 }
 
-export function handleFlash(event: EntityTrigger): void {
+export function handleFlash(event: EntityTrigger<FlashEntity>): void {
   if (event.entityOp === EntityOp.Create) {
-  let entity = event.entity;
-  let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
+    let entity = event.entity;
+    let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
 
-  // update fee growth
-  let pool = Pool.load(poolAddressParam.toHexString()) as Pool;
-  let poolContract = PoolABI.bind(poolAddressParam);
-  let feeGrowthGlobal0X128 = poolContract.feeGrowthGlobal0X128();
-  let feeGrowthGlobal1X128 = poolContract.feeGrowthGlobal1X128();
-  pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128 as BigInt;
-  pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128 as BigInt;
-  pool.save();
+    // update fee growth
+    let pool = Pool.load(poolAddressParam.toHexString()) as Pool;
+    let poolContract = PoolABI.bind(poolAddressParam);
+    let feeGrowthGlobal0X128 = poolContract.feeGrowthGlobal0X128();
+    let feeGrowthGlobal1X128 = poolContract.feeGrowthGlobal1X128();
+    pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128 as BigInt;
+    pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128 as BigInt;
+    pool.save();
   }
 }
 
-export function handlePoolCollect(event: EntityTrigger): void {
+export function handlePoolCollect(event: EntityTrigger<PoolCollect>): void {
   if (event.entityOp == EntityOp.Create) {
     let entity = event.entity;
     const bundle = Bundle.load('1')!;
@@ -1222,7 +1240,9 @@ export function handlePoolCollect(event: EntityTrigger): void {
   }
 }
 
-export function handleProtocolCollect(event: EntityTrigger): void {
+export function handleProtocolCollect(
+  event: EntityTrigger<CollectProtocol>,
+): void {
   if (event.entityOp == EntityOp.Create) {
     let entity = event.entity;
     const bundle = Bundle.load('1')!;
@@ -1353,7 +1373,9 @@ export function handleProtocolCollect(event: EntityTrigger): void {
   }
 }
 
-export function handleSetProtocolFee(event: EntityTrigger): void {
+export function handleSetProtocolFee(
+  event: EntityTrigger<SetFeeProtocol>,
+): void {
   if (event.entityOp == EntityOp.Create) {
     let entity = event.entity;
 

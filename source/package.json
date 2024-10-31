@@ -8,6 +8,7 @@
     "create-local": "graph create --node http://localhost:8020/ source",
     "remove-local": "graph remove --node http://localhost:8020/ source",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://api.thegraph.com/ipfs source",
+    "deploy-local-ipfs": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001/ source",
     "test": "graph test"
   },
   "dependencies": {

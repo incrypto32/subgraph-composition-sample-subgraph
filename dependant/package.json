@@ -14,11 +14,12 @@
     "test": "graph test -r",
     "create-local": "graph create --node http://localhost:8020/ sushiswap/v3-ethereum",
     "remove-local": "graph remove --node http://localhost:8020/ sushiswap/v3-ethereum",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://api.thegraph.com/ipfs sushiswap/v3-ethereum"
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://api.thegraph.com/ipfs sushiswap/v3-ethereum",
+    "deploy-local-ipfs": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001/ sushiswap/v3-ethereum"
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "0.79.0-alpha-20241030133640-9c60d4d",
-    "@graphprotocol/graph-ts": "^0.35.1",
+    "@graphprotocol/graph-ts": "0.36.0-alpha-20241031035325-7a6c0da",
     "assemblyscript": "^0.19.20",
     "matchstick-as": "0.5.0",
     "wabt": "1.0.24"

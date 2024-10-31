@@ -22,7 +22,9 @@ import {
   Address,
   BigDecimal,
   Entity,
+  EntityTrigger,
   ethereum,
+  EntityOp,
 } from '@graphprotocol/graph-ts';
 
 import { convertTokenToDecimal, loadTransaction, safeDiv } from '../utils';
@@ -43,7 +45,6 @@ import {
   fetchTokenTotalSupply,
   fetchTokenDecimals,
 } from '../utils/token';
-import { EntityOp, EntityTrigger } from '../utils/entityTrigger';
 
 import {
   findEthPerToken,
@@ -74,19 +75,16 @@ import {
   Mint as MintTrigger,
   Burn as BurnTrigger,
   Swap as SwapTrigger,
-} from 'generated/subgraph-QmdXu8byAFCGSDWsB5gMQjWr6GUvEVB7S1hemfxNuomerz';
+  Flash as FlashTrigger,
+} from '../../generated/subgraph-QmdXu8byAFCGSDWsB5gMQjWr6GUvEVB7S1hemfxNuomerz';
 
 export function handlePoolCreated(
-  event: EntityTrigger<PoolCreatedEntity>,
+  trigger: EntityTrigger<PoolCreatedEntity>,
 ): void {
-  if (event.entityOp === EntityOp.Create) {
-    let entity = event.entity;
-    let poolParam = entity.getBytes('pool');
-    let feeParam = entity.getI32('fee');
-    let token0Param = Address.fromBytes(entity.getBytes('token0'));
-    let token1Param = Address.fromBytes(entity.getBytes('token1'));
-    let blockTimestamp = entity.getBigInt('blockTimestamp');
-    let blockNumber = entity.getBigInt('blockNumber');
+  if (trigger.operation === EntityOp.Create) {
+    let entity = trigger.data;
+    let token0Param = Address.fromBytes(entity.token0);
+    let token1Param = Address.fromBytes(entity.token1);
 
     // load factory
     let factory = Factory.load(FACTORY_ADDRESS.toHex());
@@ -113,7 +111,7 @@ export function handlePoolCreated(
 
     factory.poolCount = factory.poolCount.plus(ONE_BI);
 
-    let pool = new Pool(poolParam.toHexString()) as Pool;
+    let pool = new Pool(entity.pool.toHexString()) as Pool;
     let token0 = Token.load(token0Param.toHexString());
     let token1 = Token.load(token1Param.toHexString());
 
@@ -184,9 +182,9 @@ export function handlePoolCreated(
 
     pool.token0 = token0.id;
     pool.token1 = token1.id;
-    pool.feeTier = BigInt.fromI32(feeParam);
-    pool.createdAtTimestamp = blockTimestamp;
-    pool.createdAtBlockNumber = blockNumber;
+    pool.feeTier = BigInt.fromI32(entity.fee);
+    pool.createdAtTimestamp = entity.blockTimestamp;
+    pool.createdAtBlockNumber = entity.blockNumber;
     pool.liquidityProviderCount = ZERO_BI;
     pool.txCount = ZERO_BI;
     pool.liquidity = ZERO_BI;
@@ -315,18 +313,11 @@ function savePositionSnapshot(position: Position, entity: Entity): void {
 }
 
 export function handleIncreaseLiquidity(
-  event: EntityTrigger<IncreaseLiquidity>,
+  trigger: EntityTrigger<IncreaseLiquidity>,
 ): void {
-  if (event.entityOp === EntityOp.Create) {
-    let entity = event.entity;
-    let blockTimestampParam = entity.getBigInt('blockTimestamp');
-    let tokenIdParam = entity.getBigInt('tokenId');
-    let transactionHashParam = entity.getBytes('transactionHash');
-    let logIndexParam = entity.getBigInt('logIndex');
-    let amount0Param = entity.getBigInt('amount0');
-    let amount1Param = entity.getBigInt('amount1');
-    let liquidityParam = entity.getBigInt('liquidity');
-    let position = getPosition(entity, tokenIdParam);
+  if (trigger.operation === EntityOp.Create) {
+    let entity = trigger.data;
+    let position = getPosition(entity, entity.tokenId);
     // position was not able to be fetched
     if (position == null) {
       return;
@@ -334,20 +325,20 @@ export function handleIncreaseLiquidity(
 
     const tx = loadTransaction(entity);
     const increase = new IncreaseEvent(
-      transactionHashParam
+      entity.transactionHash
         .toHexString()
         .concat(':')
-        .concat(logIndexParam.toString()),
+        .concat(entity.logIndex.toString()),
     );
     increase.transaction = tx.id;
-    increase.timeStamp = blockTimestampParam;
-    increase.amount0 = amount0Param;
-    increase.amount1 = amount1Param;
+    increase.timeStamp = entity.blockTimestamp;
+    increase.amount0 = entity.amount0;
+    increase.amount1 = entity.amount1;
     increase.pool = position.pool;
     increase.token0 = position.token0;
     increase.token1 = position.token1;
     increase.position = position.id;
-    increase.tokenID = tokenIdParam;
+    increase.tokenID = entity.tokenId;
     increase.save();
 
     let bundle = Bundle.load('1');
@@ -362,10 +353,10 @@ export function handleIncreaseLiquidity(
     let token0 = Token.load(position.token0) as Token;
     let token1 = Token.load(position.token1) as Token;
 
-    let amount0 = convertTokenToDecimal(amount0Param, token0.decimals);
-    let amount1 = convertTokenToDecimal(amount1Param, token1.decimals);
+    let amount0 = convertTokenToDecimal(entity.amount0, token0.decimals);
+    let amount1 = convertTokenToDecimal(entity.amount1, token1.decimals);
 
-    position.liquidity = position.liquidity.plus(liquidityParam);
+    position.liquidity = position.liquidity.plus(entity.liquidity);
     position.depositedToken0 = position.depositedToken0.plus(amount0);
     position.depositedToken1 = position.depositedToken1.plus(amount1);
 
@@ -375,7 +366,7 @@ export function handleIncreaseLiquidity(
     position.amountDepositedUSD =
       position.amountDepositedUSD.plus(newDepositUSD);
 
-    updateFeeVars(position, entity, tokenIdParam);
+    updateFeeVars(position, entity, entity.tokenId);
 
     position.save();
 
@@ -384,75 +375,64 @@ export function handleIncreaseLiquidity(
 }
 
 export function handleDecreaseLiquidity(
-  event: EntityTrigger<DecreaseLiquidity>,
+  trigger: EntityTrigger<DecreaseLiquidity>,
 ): void {
-  if (event.entityOp === EntityOp.Create) {
-    let entity = event.entity;
-    let tokenIdParam = entity.getBigInt('tokenId');
-    let transactionHashParam = entity.getBytes('transactionHash');
-    let logIndexParam = entity.getBigInt('logIndex');
-    let amount0Param = entity.getBigInt('amount0');
-    let amount1Param = entity.getBigInt('amount1');
-    let blockTimestampParam = entity.getBigInt('blockTimestamp');
-    let liquidityParam = entity.getBigInt('liquidity');
+  if (trigger.operation === EntityOp.Create) {
+    let entity = trigger.data;
+    let position = getPosition(entity, entity.tokenId);
 
-    let position = getPosition(entity, tokenIdParam);
-
-    // position was not able to be fetched
+    // Position was not able to be fetched
     if (position == null) {
       return;
     }
 
     const tx = loadTransaction(entity);
     const decrease = new DecreaseEvent(
-      transactionHashParam
+      entity.transactionHash
         .toHexString()
         .concat(':')
-        .concat(logIndexParam.toString()),
+        .concat(entity.logIndex.toString()),
     );
     decrease.transaction = tx.id;
-    decrease.timeStamp = blockTimestampParam;
-    decrease.amount0 = amount0Param;
-    decrease.amount1 = amount1Param;
+    decrease.timeStamp = entity.blockTimestamp;
+    decrease.amount0 = entity.amount0;
+    decrease.amount1 = entity.amount1;
     decrease.pool = position.pool;
     decrease.token0 = position.token0;
     decrease.token1 = position.token1;
     decrease.position = position.id;
-    decrease.tokenID = tokenIdParam;
+    decrease.tokenID = entity.tokenId;
     decrease.save();
 
     let bundle = Bundle.load('1') as Bundle;
 
     let token0 = Token.load(position.token0) as Token;
     let token1 = Token.load(position.token1) as Token;
-    let amount0 = convertTokenToDecimal(amount0Param, token0.decimals);
-    let amount1 = convertTokenToDecimal(amount1Param, token1.decimals);
+    let amount0 = convertTokenToDecimal(entity.amount0, token0.decimals);
+    let amount1 = convertTokenToDecimal(entity.amount1, token1.decimals);
 
-    position.liquidity = position.liquidity.minus(liquidityParam);
+    position.liquidity = position.liquidity.minus(entity.liquidity);
     position.withdrawnToken0 = position.withdrawnToken0.plus(amount0);
     position.withdrawnToken1 = position.withdrawnToken1.plus(amount1);
 
     let newWithdrawUSD = amount0
       .times(token0.derivedETH.times(bundle.ethPriceUSD))
       .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)));
-    position.amountWithdrawnUSD =
-      position.amountWithdrawnUSD.plus(newWithdrawUSD);
+    position.amountWithdrawnUSD = position.amountWithdrawnUSD.plus(newWithdrawUSD);
 
-    position = updateFeeVars(position, entity, tokenIdParam);
+    position = updateFeeVars(position, entity, entity.tokenId);
     position.save();
     savePositionSnapshot(position, entity);
   }
 }
 
-export function handleCollect(event: EntityTrigger<CollectTrigger>): void {
-  if (event.entityOp === EntityOp.Create) {
-    let entity = event.entity;
-    let tokenIdParam = entity.getBigInt('tokenId');
-    let amount0Param = entity.getBigInt('amount0');
-    let amount1Param = entity.getBigInt('amount1');
 
-    let position = getPosition(entity, tokenIdParam);
-    // position was not able to be fetched
+export function handleCollect(trigger: EntityTrigger<CollectTrigger>): void {
+  if (trigger.operation === EntityOp.Create) {
+    let entity = trigger.data;
+    let position = getPosition(entity, entity.tokenId);
+
+    // Position was not able to be fetched
     if (position == null) {
       return;
     }
@@ -460,64 +440,56 @@ export function handleCollect(event: EntityTrigger<CollectTrigger>): void {
     let bundle = Bundle.load('1') as Bundle;
     let token0 = Token.load(position.token0) as Token;
     let token1 = Token.load(position.token1) as Token;
-    let amount0 = convertTokenToDecimal(amount0Param, token0.decimals);
-    let amount1 = convertTokenToDecimal(amount1Param, token1.decimals);
+
+    let amount0 = convertTokenToDecimal(entity.amount0, token0.decimals);
+    let amount1 = convertTokenToDecimal(entity.amount1, token1.decimals);
     position.collectedToken0 = position.collectedToken0.plus(amount0);
     position.collectedToken1 = position.collectedToken1.plus(amount1);
 
-    position.collectedFeesToken0 = position.collectedToken0.minus(
-      position.withdrawnToken0,
-    );
-    position.collectedFeesToken1 = position.collectedToken1.minus(
-      position.withdrawnToken1,
-    );
+    position.collectedFeesToken0 = position.collectedToken0.minus(position.withdrawnToken0);
+    position.collectedFeesToken1 = position.collectedToken1.minus(position.withdrawnToken1);
 
     let newCollectUSD = amount0
       .times(token0.derivedETH.times(bundle.ethPriceUSD))
       .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)));
-    position.amountCollectedUSD =
-      position.amountCollectedUSD.plus(newCollectUSD);
+    position.amountCollectedUSD = position.amountCollectedUSD.plus(newCollectUSD);
 
-    position = updateFeeVars(position, entity, tokenIdParam);
+    position = updateFeeVars(position, entity, entity.tokenId);
     position.save();
     savePositionSnapshot(position, entity);
   }
 }
 
-export function handleTransfer(event: EntityTrigger<Transfer>): void {
-  if (event.entityOp === EntityOp.Create) {
-    let entity = event.entity;
-    let tokenIdParam = entity.getBigInt('tokenId');
-    let toParam = entity.getBytes('to');
-    let position = getPosition(entity, tokenIdParam);
 
-    // position was not able to be fetched
+export function handleTransfer(trigger: EntityTrigger<Transfer>): void {
+  if (trigger.operation === EntityOp.Create) {
+    let entity = trigger.data;
+    let position = getPosition(entity, entity.tokenId);
+
+    // Position was not able to be fetched
     if (position == null) {
       return;
     }
 
-    position.owner = toParam;
+    position.owner = entity.to;
     position.save();
 
     savePositionSnapshot(position, entity);
   }
 }
 
+
 // ===================================================================== Pool
 
-export function handleInitialize(event: EntityTrigger<Initialize>): void {
-  if (event.entityOp === EntityOp.Create) {
-    let entity = event.entity;
-    let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
-    let sqrtPriceX96Param = entity.getBigInt('sqrtPriceX96');
-    let tickParam = entity.getI32('tick');
-
-    let blockTimestamp = entity.getBigInt('blockTimestamp');
+export function handleInitialize(trigger: EntityTrigger<Initialize>): void {
+  if (trigger.operation === EntityOp.Create) {
+    let entity = trigger.data;
+    let poolAddressParam = Address.fromBytes(entity.poolAddress);
 
     // update pool sqrt price and tick
     let pool = Pool.load(poolAddressParam.toHexString()) as Pool;
-    pool.sqrtPrice = sqrtPriceX96Param;
-    pool.tick = BigInt.fromI32(tickParam);
+    pool.sqrtPrice = entity.sqrtPriceX96;
+    pool.tick = BigInt.fromI32(entity.tick);
     pool.save();
 
     // update token prices
@@ -540,30 +512,19 @@ export function handleInitialize(event: EntityTrigger<Initialize>): void {
   }
 }
 
-export function handleMint(event: EntityTrigger<MintTrigger>): void {
-  if (event.entityOp === EntityOp.Create) {
+export function handleMint(trigger: EntityTrigger<MintTrigger>): void {
+  if (trigger.operation === EntityOp.Create) {
     let bundle = Bundle.load('1') as Bundle;
-    let entity = event.entity;
-    let poolAddress = event.entity.getBytes('poolAddress').toHexString();
-    let amount0Param = entity.getBigInt('amount0');
-    let amount1Param = entity.getBigInt('amount1');
-    let amountParam = entity.getBigInt('amount');
-    let tickLowerParam = entity.getI32('tickLower');
-    let tickUpperParam = entity.getI32('tickUpper');
-    let ownerParam = entity.getBytes('owner');
-    let senderParam = entity.getBytes('sender');
-    let transactionFromParam = entity.getBytes('transactionFrom');
-    let logIndexParam = entity.getBigInt('logIndex');
-    let blockTimestamp = entity.getBigInt('blockTimestamp');
-    let blockNumber = entity.getBigInt('blockNumber');
+    let entity = trigger.data;
+    let poolAddress = trigger.data.getBytes('poolAddress').toHexString();
 
     let pool = Pool.load(poolAddress) as Pool;
     let factory = Factory.load(FACTORY_ADDRESS.toHex()) as Factory;
 
     let token0 = Token.load(pool.token0) as Token;
     let token1 = Token.load(pool.token1) as Token;
-    let amount0 = convertTokenToDecimal(amount0Param, token0.decimals);
-    let amount1 = convertTokenToDecimal(amount1Param, token1.decimals);
+    let amount0 = convertTokenToDecimal(entity.amount0, token0.decimals);
+    let amount1 = convertTokenToDecimal(entity.amount1, token1.decimals);
 
     let amountUSD = amount0
       .times(token0.derivedETH.times(bundle.ethPriceUSD))
@@ -598,10 +559,10 @@ export function handleMint(event: EntityTrigger<MintTrigger>): void {
     // We only want to update it on mint if the new position includes the current tick.
     if (
       pool.tick !== null &&
-      BigInt.fromI32(tickLowerParam).le(pool.tick as BigInt) &&
-      BigInt.fromI32(tickUpperParam).gt(pool.tick as BigInt)
+      BigInt.fromI32(entity.tickLower).le(pool.tick as BigInt) &&
+      BigInt.fromI32(entity.tickUpper).gt(pool.tick as BigInt)
     ) {
-      pool.liquidity = pool.liquidity.plus(amountParam);
+      pool.liquidity = pool.liquidity.plus(entity.amount);
     }
 
     pool.totalValueLockedToken0 = pool.totalValueLockedToken0.plus(amount0);
@@ -621,7 +582,7 @@ export function handleMint(event: EntityTrigger<MintTrigger>): void {
       bundle.ethPriceUSD,
     );
 
-    let transaction = loadTransaction(event.entity);
+    let transaction = loadTransaction(trigger.data);
     let mint = new Mint(
       transaction.id.toString() + '#' + pool.txCount.toString(),
     );
@@ -630,25 +591,25 @@ export function handleMint(event: EntityTrigger<MintTrigger>): void {
     mint.pool = pool.id;
     mint.token0 = pool.token0;
     mint.token1 = pool.token1;
-    mint.owner = ownerParam;
-    mint.sender = senderParam;
-    mint.origin = transactionFromParam;
-    mint.amount = amountParam;
+    mint.owner = entity.owner;
+    mint.sender = entity.sender;
+    mint.origin = entity.transactionFrom;
+    mint.amount = entity.amount;
     mint.amount0 = amount0;
     mint.amount1 = amount1;
     mint.amountUSD = amountUSD;
-    mint.tickLower = BigInt.fromI32(tickLowerParam);
-    mint.tickUpper = BigInt.fromI32(tickUpperParam);
-    mint.logIndex = logIndexParam;
+    mint.tickLower = BigInt.fromI32(entity.tickLower);
+    mint.tickUpper = BigInt.fromI32(entity.tickUpper);
+    mint.logIndex = entity.logIndex;
 
     // tick entities
-    let lowerTickIdx = tickLowerParam;
-    let upperTickIdx = tickUpperParam;
+    let lowerTickIdx = entity.tickLower;
+    let upperTickIdx = entity.tickUpper;
 
     let lowerTickId =
-      poolAddress + '#' + BigInt.fromI32(tickLowerParam).toString();
+      poolAddress + '#' + BigInt.fromI32(entity.tickLower).toString();
     let upperTickId =
-      poolAddress + '#' + BigInt.fromI32(tickUpperParam).toString();
+      poolAddress + '#' + BigInt.fromI32(entity.tickUpper).toString();
 
     let lowerTick = Tick.load(lowerTickId);
     let upperTick = Tick.load(upperTickId);
@@ -658,8 +619,8 @@ export function handleMint(event: EntityTrigger<MintTrigger>): void {
         lowerTickId,
         lowerTickIdx,
         pool.id,
-        blockNumber,
-        blockTimestamp,
+        entity.blockNumber,
+        entity.blockTimestamp,
       );
     }
 
@@ -668,12 +629,12 @@ export function handleMint(event: EntityTrigger<MintTrigger>): void {
         upperTickId,
         upperTickIdx,
         pool.id,
-        blockNumber,
-        blockTimestamp,
+        entity.blockNumber,
+        entity.blockTimestamp,
       );
     }
 
-    let amount = amountParam;
+    let amount = entity.amount;
     lowerTick.liquidityGross = lowerTick.liquidityGross.plus(amount);
     lowerTick.liquidityNet = lowerTick.liquidityNet.plus(amount);
     upperTick.liquidityGross = upperTick.liquidityGross.plus(amount);
@@ -702,29 +663,18 @@ export function handleMint(event: EntityTrigger<MintTrigger>): void {
   }
 }
 
-// Note: this handler need not adjust TVL because that is accounted for in the handleCollect handler
-export function handleBurn(event: EntityTrigger<BurnTrigger>): void {
-  if (event.entityOp === EntityOp.Create) {
-    let entity = event.entity;
-    let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
-    let amount0Param = entity.getBigInt('amount0');
-    let amount1Param = entity.getBigInt('amount1');
-    let amountParam = entity.getBigInt('amount');
-    let tickLowerParam = entity.getI32('tickLower');
-    let tickUpperParam = entity.getI32('tickUpper');
-    let ownerParam = entity.getBytes('owner');
-    let logIndexParam = entity.getBigInt('logIndex');
-    let transactionFromParam = entity.getBytes('transactionFrom');
-
+export function handleBurn(trigger: EntityTrigger<BurnTrigger>): void {
+  if (trigger.operation === EntityOp.Create) {
+    let entity = trigger.data;
     let bundle = Bundle.load('1') as Bundle;
-    let poolAddress = poolAddressParam.toHexString();
+    let poolAddress = Address.fromBytes(entity.poolAddress).toHexString();
     let pool = Pool.load(poolAddress) as Pool;
     let factory = Factory.load(FACTORY_ADDRESS.toHex()) as Factory;
 
     let token0 = Token.load(pool.token0) as Token;
     let token1 = Token.load(pool.token1) as Token;
-    let amount0 = convertTokenToDecimal(amount0Param, token0.decimals);
-    let amount1 = convertTokenToDecimal(amount1Param, token1.decimals);
+    let amount0 = convertTokenToDecimal(entity.amount0, token0.decimals);
+    let amount1 = convertTokenToDecimal(entity.amount1, token1.decimals);
 
     let amountUSD = amount0
       .times(token0.derivedETH.times(bundle.ethPriceUSD))
@@ -745,45 +695,42 @@ export function handleBurn(event: EntityTrigger<BurnTrigger>): void {
     // We only want to update it on burn if the position being burnt includes the current tick.
     if (
       pool.tick !== null &&
-      BigInt.fromI32(tickLowerParam).le(pool.tick as BigInt) &&
-      BigInt.fromI32(tickUpperParam).gt(pool.tick as BigInt)
+      BigInt.fromI32(entity.tickLower).le(pool.tick as BigInt) &&
+      BigInt.fromI32(entity.tickUpper).gt(pool.tick as BigInt)
     ) {
-      // todo: this liquidity can be calculated from the real reserves and
-      // current price instead of incrementally from every burned amount which
-      // may not be accurate: https://linear.app/uniswap/issue/DAT-336/fix-pool-liquidity
-      pool.liquidity = pool.liquidity.minus(amountParam);
+      pool.liquidity = pool.liquidity.minus(entity.amount);
     }
 
     // burn entity
     let transaction = loadTransaction(entity);
-    let burn = new Burn(transaction.id + '-' + logIndexParam.toString());
+    let burn = new Burn(transaction.id + '-' + entity.logIndex.toString());
     burn.transaction = transaction.id;
     burn.timestamp = transaction.timestamp;
     burn.pool = pool.id;
     burn.token0 = pool.token0;
     burn.token1 = pool.token1;
-    burn.owner = ownerParam;
-    burn.origin = transactionFromParam;
-    burn.amount = amountParam;
+    burn.owner = entity.owner;
+    burn.origin = entity.transactionFrom;
+    burn.amount = entity.amount;
     burn.amount0 = amount0;
     burn.amount1 = amount1;
     burn.amountUSD = amountUSD;
-    burn.tickLower = BigInt.fromI32(tickLowerParam);
-    burn.tickUpper = BigInt.fromI32(tickUpperParam);
-    burn.logIndex = logIndexParam;
+    burn.tickLower = BigInt.fromI32(entity.tickLower);
+    burn.tickUpper = BigInt.fromI32(entity.tickUpper);
+    burn.logIndex = entity.logIndex;
 
     // tick entities
     let lowerTickId =
-      poolAddress + '#' + BigInt.fromI32(tickLowerParam).toString();
+      poolAddress + '#' + BigInt.fromI32(entity.tickLower).toString();
     let upperTickId =
-      poolAddress + '#' + BigInt.fromI32(tickUpperParam).toString();
+      poolAddress + '#' + BigInt.fromI32(entity.tickUpper).toString();
     let lowerTick = Tick.load(lowerTickId) as Tick;
     let upperTick = Tick.load(upperTickId) as Tick;
-    let amount = amountParam;
-    lowerTick.liquidityGross = lowerTick.liquidityGross.minus(amount);
-    lowerTick.liquidityNet = lowerTick.liquidityNet.minus(amount);
-    upperTick.liquidityGross = upperTick.liquidityGross.minus(amount);
-    upperTick.liquidityNet = upperTick.liquidityNet.plus(amount);
+
+    lowerTick.liquidityGross = lowerTick.liquidityGross.minus(entity.amount);
+    lowerTick.liquidityNet = lowerTick.liquidityNet.minus(entity.amount);
+    upperTick.liquidityGross = upperTick.liquidityGross.minus(entity.amount);
+    upperTick.liquidityNet = upperTick.liquidityNet.plus(entity.amount);
 
     updateUniswapDayData(entity);
     updatePoolDayData(entity);
@@ -803,23 +750,13 @@ export function handleBurn(event: EntityTrigger<BurnTrigger>): void {
   }
 }
 
-export function handleSwap(event: EntityTrigger<SwapTrigger>): void {
-  if (event.entityOp == EntityOp.Create) {
-    let entity = event.entity;
-    let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
-    let amount0Param = entity.getBigInt('amount0');
-    let amount1Param = entity.getBigInt('amount1');
-    let senderParam = entity.getBytes('sender');
-    let recipientParam = entity.getBytes('recipient');
-    let transactionFromParam = entity.getBytes('transactionFrom');
-    let logIndexParam = entity.getBigInt('logIndex');
-    let liquidityParam = entity.getBigInt('liquidity');
-    let tickParam = entity.getI32('tick');
-    let sqrtPriceX96Param = entity.getBigInt('sqrtPriceX96');
+export function handleSwap(trigger: EntityTrigger<SwapTrigger>): void {
+  if (trigger.operation == EntityOp.Create) {
+    let entity = trigger.data;
 
     let bundle = Bundle.load('1') as Bundle;
     let factory = Factory.load(FACTORY_ADDRESS.toHex()) as Factory;
-    let pool = Pool.load(poolAddressParam.toHexString()) as Pool;
+    let pool = Pool.load(entity.poolAddress.toHexString()) as Pool;
 
     let token0 = Token.load(pool.token0) as Token;
     let token1 = Token.load(pool.token1) as Token;
@@ -827,8 +764,8 @@ export function handleSwap(event: EntityTrigger<SwapTrigger>): void {
     let oldTick = pool.tick!;
 
     // amounts - 0/1 are token deltas: can be positive or negative
-    let amount0 = convertTokenToDecimal(amount0Param, token0.decimals);
-    let amount1 = convertTokenToDecimal(amount1Param, token1.decimals);
+    let amount0 = convertTokenToDecimal(entity.amount0, token0.decimals);
+    let amount1 = convertTokenToDecimal(entity.amount1, token1.decimals);
 
     // need absolute amounts for volume
     let amount0Abs = amount0;
@@ -891,9 +828,9 @@ export function handleSwap(event: EntityTrigger<SwapTrigger>): void {
     pool.txCount = pool.txCount.plus(ONE_BI);
 
     // Update the pool with the new active liquidity, price, and tick.
-    pool.liquidity = liquidityParam;
-    pool.tick = BigInt.fromI32(tickParam as i32);
-    pool.sqrtPrice = sqrtPriceX96Param;
+    pool.liquidity = entity.liquidity;
+    pool.tick = BigInt.fromI32(entity.tick as i32);
+    pool.sqrtPrice = entity.sqrtPriceX96;
     pool.totalValueLockedToken0 = pool.totalValueLockedToken0.plus(amount0);
     pool.totalValueLockedToken1 = pool.totalValueLockedToken1.plus(amount1);
 
@@ -966,18 +903,18 @@ export function handleSwap(event: EntityTrigger<SwapTrigger>): void {
     swap.pool = pool.id;
     swap.token0 = pool.token0;
     swap.token1 = pool.token1;
-    swap.sender = senderParam;
-    swap.origin = transactionFromParam;
-    swap.recipient = recipientParam;
+    swap.sender = entity.sender;
+    swap.origin = entity.transactionFrom;
+    swap.recipient = entity.recipient;
     swap.amount0 = amount0;
     swap.amount1 = amount1;
     swap.amountUSD = amountTotalUSDTracked;
-    swap.tick = BigInt.fromI32(tickParam as i32);
-    swap.sqrtPriceX96 = sqrtPriceX96Param;
-    swap.logIndex = logIndexParam;
+    swap.tick = BigInt.fromI32(entity.tick as i32);
+    swap.sqrtPriceX96 = entity.sqrtPriceX96;
+    swap.logIndex = entity.logIndex;
 
     // update fee growth
-    let poolContract = PoolABI.bind(poolAddressParam);
+    let poolContract = PoolABI.bind(Address.fromBytes(entity.poolAddress));
     let feeGrowthGlobal0X128 = poolContract.feeGrowthGlobal0X128();
     let feeGrowthGlobal1X128 = poolContract.feeGrowthGlobal1X128();
     pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128 as BigInt;
@@ -1091,10 +1028,10 @@ export function handleSwap(event: EntityTrigger<SwapTrigger>): void {
   }
 }
 
-export function handleFlash(event: EntityTrigger<FlashEntity>): void {
-  if (event.entityOp === EntityOp.Create) {
-    let entity = event.entity;
-    let poolAddressParam = Address.fromBytes(entity.getBytes('poolAddress'));
+export function handleFlash(trigger: EntityTrigger<FlashTrigger>): void {
+  if (trigger.operation === EntityOp.Create) {
+    let entity = trigger.data;
+    let poolAddressParam = Address.fromBytes(entity.poolAddress);
 
     // update fee growth
     let pool = Pool.load(poolAddressParam.toHexString()) as Pool;
@@ -1107,20 +1044,12 @@ export function handleFlash(event: EntityTrigger<FlashEntity>): void {
   }
 }
 
-export function handlePoolCollect(event: EntityTrigger<PoolCollect>): void {
-  if (event.entityOp == EntityOp.Create) {
-    let entity = event.entity;
+export function handlePoolCollect(trigger: EntityTrigger<PoolCollect>): void {
+  if (trigger.operation == EntityOp.Create) {
+    let entity = trigger.data;
     const bundle = Bundle.load('1')!;
-    let poolAddressParam = event.entity.getBytes('poolAddress');
-    let amount0Param = event.entity.getBigInt('amount0');
-    let amount1Param = event.entity.getBigInt('amount1');
-    let ownerParam = event.entity.getBytes('owner');
-    let logIndexParam = event.entity.getBigInt('logIndex');
-    let tickLowerParam = event.entity.getI32('tickLower');
-    let tickUpperParam = event.entity.getI32('tickUpper');
-    let blockTimestampParam = event.entity.getBigInt('blockTimestamp');
 
-    const pool = Pool.load(poolAddressParam.toHexString());
+    const pool = Pool.load(entity.poolAddress.toHexString());
     if (pool == null) {
       return;
     }
@@ -1135,11 +1064,11 @@ export function handlePoolCollect(event: EntityTrigger<PoolCollect>): void {
 
     // Get formatted amounts collected.
     const collectedAmountToken0 = convertTokenToDecimal(
-      amount0Param,
+      entity.amount0,
       token0.decimals,
     );
     const collectedAmountToken1 = convertTokenToDecimal(
-      amount1Param,
+      entity.amount1,
       token1.decimals,
     );
     const trackedCollectedAmountUSD = getTrackedAmountUSD(
@@ -1209,18 +1138,18 @@ export function handlePoolCollect(event: EntityTrigger<PoolCollect>): void {
     );
 
     const collect = new Collect(
-      transaction.id + '-' + logIndexParam.toString(),
+      transaction.id + '-' + entity.logIndex.toString(),
     );
     collect.transaction = transaction.id;
-    collect.timestamp = blockTimestampParam;
+    collect.timestamp = entity.blockTimestamp;
     collect.pool = pool.id;
-    collect.owner = ownerParam;
+    collect.owner = entity.owner;
     collect.amount0 = collectedAmountToken0;
     collect.amount1 = collectedAmountToken1;
     collect.amountUSD = trackedCollectedAmountUSD;
-    collect.tickLower = BigInt.fromI32(tickLowerParam);
-    collect.tickUpper = BigInt.fromI32(tickUpperParam);
-    collect.logIndex = logIndexParam;
+    collect.tickLower = BigInt.fromI32(entity.tickLower);
+    collect.tickUpper = BigInt.fromI32(entity.tickUpper);
+    collect.logIndex = entity.logIndex;
 
     updateUniswapDayData(entity);
     updatePoolDayData(entity);
@@ -1241,19 +1170,13 @@ export function handlePoolCollect(event: EntityTrigger<PoolCollect>): void {
 }
 
 export function handleProtocolCollect(
-  event: EntityTrigger<CollectProtocol>,
+  trigger: EntityTrigger<CollectProtocol>,
 ): void {
-  if (event.entityOp == EntityOp.Create) {
-    let entity = event.entity;
+  if (trigger.operation == EntityOp.Create) {
+    let entity = trigger.data;
     const bundle = Bundle.load('1')!;
-    let poolAddressParam = event.entity.getBytes('poolAddress');
-    let amount0Param = event.entity.getBigInt('amount0');
-    let amount1Param = event.entity.getBigInt('amount1');
-    let recipientParam = event.entity.getBytes('recipient');
-    let logIndexParam = event.entity.getBigInt('logIndex');
-    let blockTimestampParam = event.entity.getBigInt('blockTimestamp');
 
-    const pool = Pool.load(poolAddressParam.toHexString());
+    const pool = Pool.load(entity.poolAddress.toHexString());
     if (pool == null) {
       return;
     }
@@ -1268,11 +1191,11 @@ export function handleProtocolCollect(
 
     // Get formatted amounts collected.
     const collectedAmountToken0 = convertTokenToDecimal(
-      amount0Param,
+      entity.amount0,
       token0.decimals,
     );
     const collectedAmountToken1 = convertTokenToDecimal(
-      amount1Param,
+      entity.amount1,
       token1.decimals,
     );
     const trackedCollectedAmountUSD = getTrackedAmountUSD(
@@ -1342,18 +1265,18 @@ export function handleProtocolCollect(
     );
 
     const collect = new Collect(
-      transaction.id + '-' + logIndexParam.toString(),
+      transaction.id + '-' + entity.logIndex.toString(),
     );
     collect.transaction = transaction.id;
-    collect.timestamp = blockTimestampParam;
+    collect.timestamp = entity.blockTimestamp;
     collect.pool = pool.id;
-    collect.owner = recipientParam;
+    collect.owner = entity.recipient;
     collect.amount0 = collectedAmountToken0;
     collect.amount1 = collectedAmountToken1;
     collect.amountUSD = trackedCollectedAmountUSD;
     collect.tickLower = ZERO_BI;
     collect.tickUpper = ZERO_BI;
-    collect.logIndex = logIndexParam;
+    collect.logIndex = entity.logIndex;
 
     updateUniswapDayData(entity);
     updatePoolDayData(entity);
@@ -1374,47 +1297,37 @@ export function handleProtocolCollect(
 }
 
 export function handleSetProtocolFee(
-  event: EntityTrigger<SetFeeProtocol>,
+  trigger: EntityTrigger<SetFeeProtocol>,
 ): void {
-  if (event.entityOp == EntityOp.Create) {
-    let entity = event.entity;
-
-    let poolAddressParam = event.entity.getBytes('poolAddress');
-    let feeProtocol0NewParam = event.entity.getI32('feeProtocol0New');
-    let feeProtocol1NewParam = event.entity.getI32('feeProtocol1New');
-    let transactionHashParam = event.entity.getBytes('transactionHash');
-    let logIndexParam = event.entity.getBigInt('logIndex');
-    let blockTimestampParam = event.entity.getBigInt('blockTimestamp');
-    let feeProtocol0OldParam = event.entity.getI32('feeProtocol0Old');
-    let feeProtocol1OldParam = event.entity.getI32('feeProtocol1Old');
-    const pool = Pool.load(poolAddressParam.toHexString());
+  if (trigger.operation == EntityOp.Create) {
+    let entity = trigger.data;
+    const pool = Pool.load(entity.poolAddress.toHexString());
     if (pool == null) {
       return;
     }
 
     pool.isProtocolFeeEnabled =
-      feeProtocol0NewParam > 0 || feeProtocol1NewParam > 0;
+      entity.feeProtocol0New > 0 || entity.feeProtocol1New > 0;
     pool.save();
 
     const protocolFeeEvent = new SetProtocolFeeEvent(
-      transactionHashParam.toHexString() + '-' + logIndexParam.toString(),
+      entity.transactionHash.toHexString() + '-' + entity.logIndex.toString(),
     );
     protocolFeeEvent.pool = pool.id;
-    protocolFeeEvent.logIndex = logIndexParam;
-    protocolFeeEvent.timestamp = blockTimestampParam;
+    protocolFeeEvent.logIndex = entity.logIndex;
+    protocolFeeEvent.timestamp = entity.blockTimestamp;
     protocolFeeEvent.pool = pool.id;
-    protocolFeeEvent.new0 = BigInt.fromI32(feeProtocol0NewParam);
-    protocolFeeEvent.new1 = BigInt.fromI32(feeProtocol1NewParam);
-    protocolFeeEvent.old0 = BigInt.fromI32(feeProtocol0OldParam);
-    protocolFeeEvent.old1 = BigInt.fromI32(feeProtocol1OldParam);
+    protocolFeeEvent.new0 = BigInt.fromI32(entity.feeProtocol0New);
+    protocolFeeEvent.new1 = BigInt.fromI32(entity.feeProtocol1New);
+    protocolFeeEvent.old0 = BigInt.fromI32(entity.feeProtocol0Old);
+    protocolFeeEvent.old1 = BigInt.fromI32(entity.feeProtocol1Old);
     protocolFeeEvent.save();
   }
 }
 
 function updateTickFeeVarsAndSave(tick: Tick, entity: Entity): void {
   let poolAddress = Address.fromBytes(entity.getBytes('poolAddress'));
-  // not all ticks are initialized so obtaining null is expected behavior
-  let poolContract = PoolABI.bind(poolAddress);
+  let poolContract = PoolABI.bind(Address.fromBytes(poolAddress));
   let tickResult = poolContract.ticks(tick.tickIdx.toI32());
   tick.feeGrowthOutside0X128 = tickResult.value2;
   tick.feeGrowthOutside1X128 = tickResult.value3;

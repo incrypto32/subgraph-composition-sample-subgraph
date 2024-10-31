@@ -12,8 +12,8 @@ importers:
         specifier: 0.79.0-alpha-20241030133640-9c60d4d
         version: 0.79.0-alpha-20241030133640-9c60d4d(@types/node@22.7.5)(encoding@0.1.13)(node-fetch@2.7.0(encoding@0.1.13))(typescript@5.6.3)
       '@graphprotocol/graph-ts':
-        specifier: ^0.35.1
-        version: 0.35.1
+        specifier: 0.36.0-alpha-20241031035325-7a6c0da
+        version: 0.36.0-alpha-20241031035325-7a6c0da
       assemblyscript:
         specifier: ^0.19.20
         version: 0.19.23
@@ -108,8 +108,8 @@ packages:
   '@graphprotocol/graph-ts@0.27.0':
     resolution: {integrity: sha512-r1SPDIZVQiGMxcY8rhFSM0y7d/xAbQf5vHMWUf59js1KgoyWpM6P3tczZqmQd7JTmeyNsDGIPzd9FeaxllsU4w==}
 
-  '@graphprotocol/graph-ts@0.35.1':
-    resolution: {integrity: sha512-74CfuQmf7JI76/XCC34FTkMMKeaf+3Pn0FIV3m9KNeaOJ+OI3CvjMIVRhOZdKcJxsFCBGaCCl0eQjh47xTjxKA==}
+  '@graphprotocol/graph-ts@0.36.0-alpha-20241031035325-7a6c0da':
+    resolution: {integrity: sha512-bq6QH6aEiMgBEIEzZTzf8zUlfYLEX6ghxax2je4szytYQbBIy5IPv4aWiIzl7EA38IKIwiSz1fs7EHF3Y5lZpw==}
 
   '@ipld/dag-cbor@7.0.3':
     resolution: {integrity: sha512-1VVh2huHsuohdXC1bGJNE8WR72slZ9XE2T3wbBBq31dm7ZBatmKLLxrB+XAqafxfRFjv08RZmj/W/ZqaM13AuA==}
@@ -2011,7 +2011,7 @@ snapshots:
     dependencies:
       assemblyscript: 0.19.10
 
-  '@graphprotocol/graph-ts@0.35.1':
+  '@graphprotocol/graph-ts@0.36.0-alpha-20241031035325-7a6c0da':
     dependencies:
       assemblyscript: 0.19.10
 

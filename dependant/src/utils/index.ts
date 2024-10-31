@@ -1,8 +1,7 @@
 /* eslint-disable prefer-const */
-import { BigInt, BigDecimal, ethereum, Bytes, Entity } from '@graphprotocol/graph-ts';
+import { BigInt, BigDecimal, Entity } from '@graphprotocol/graph-ts';
 import { Transaction } from '../../generated/schema';
 import { ONE_BI, ZERO_BI, ZERO_BD, ONE_BD } from '../constants';
-import { EntityTrigger } from './entityTrigger';
 
 export function exponentToBigDecimal(decimals: BigInt): BigDecimal {
   let bd = BigDecimal.fromString('1');
@@ -97,14 +96,12 @@ export function convertEthToDecimal(eth: BigInt): BigDecimal {
   return eth.toBigDecimal().div(exponentToBigDecimal(BigInt.fromI32(18)));
 }
 
-export function loadTransaction(
-  entity: Entity,
-): Transaction {
+export function loadTransaction(entity: Entity): Transaction {
   let transactionHash = entity.getBytes('transactionHash');
   let transactionGasPrice = entity.getBigInt('transactionGasPrice');
   let blockNumber = entity.getBigInt('blockNumber');
   let blockTimestamp = entity.getBigInt('blockTimestamp');
-  
+
   let transaction = Transaction.load(transactionHash.toHexString());
   if (transaction === null) {
     transaction = new Transaction(transactionHash.toHexString());

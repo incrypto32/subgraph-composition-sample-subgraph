@@ -99,7 +99,18 @@ export function handleCustomEntityChange(
   }
 }
 ```
-  
+---
+
+### Entity Operations in Handlers
+
+In the handler, you can check for the type of operation that occurred on the source entity. The `EntityOp` enumeration provides the following operations:
+
+1. **Create** (`EntityOp.Create`): This operation is triggered when a new entity is created in the source subgraph.
+2. **Modify** (`EntityOp.Modify`): This operation is triggered when an existing entity is modified in the source subgraph.
+3. **Remove** (`EntityOp.Remove`): This operation is triggered when an entity is removed from the source subgraph.
+
+These operations allow you to tailor the response in your handler based on the type of change, ensuring that your dependent subgraph can respond accordingly.
+
 ---
 
 

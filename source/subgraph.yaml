@@ -4,10 +4,10 @@ schema:
 dataSources:
   - kind: ethereum
     name: UniswapV3Factory
-    network: scroll
+    network: base
     source:
-      address: '0x46B3fDF7b5CDe91Ac049936bF0bDb12c5d22202e'
-      startBlock: 82522
+      address: '0xc35dadb65012ec5796536bd9864ed8773abc74c4'
+      startBlock: 1759510
       abi: UniswapV3Factory
     mapping:
       kind: ethereum/events
@@ -49,10 +49,10 @@ dataSources:
       file: ./src/uniswap-v-3-factory.ts
   - kind: ethereum
     name: NonfungiblePositionManager
-    network: scroll
+    network: base
     source:
-      address: '0x0389879e0156033202C44BF784ac18fC02edeE4f'
-      startBlock: 82597
+      address: '0x80C7DD17B01855a6D2347444a0FCC36136a314de'
+      startBlock: 1759765
       abi: NonfungiblePositionManager
     mapping:
       kind: ethereum/events
@@ -95,7 +95,7 @@ dataSources:
 templates:
   - kind: ethereum
     name: UniswapV3Pool
-    network: scroll
+    network: base
     source:
       abi: UniswapV3Pool
     mapping:

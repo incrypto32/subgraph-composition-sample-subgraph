@@ -4,6 +4,7 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
+    "generate": "mustache ../config/$NETWORK.js template.yaml > subgraph.yaml && graph codegen",
     "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ source",
     "create-local": "graph create --node http://localhost:8020/ source",
     "remove-local": "graph remove --node http://localhost:8020/ source",

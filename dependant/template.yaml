@@ -5,10 +5,10 @@ schema:
 dataSources:
   - kind: subgraph
     name: Factory
-    network: base
+    network: {{ network }}
     source:
-      address: 'QmSgvtjK6b5GmnSeboH9AMdVrK8YeVrmJ1ESHw3WhYKdDH'
-      startBlock: 1759510
+      address: 'ID'
+      startBlock: {{ v3.factory.startBlock }}
     mapping:
       apiVersion: 0.0.7
       language: wasm/assemblyscript

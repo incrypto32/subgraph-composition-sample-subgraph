@@ -9,7 +9,7 @@
     "generated"
   ],
   "scripts": {
-    "generate": "mustache ../../config/$NETWORK.js template.yaml > subgraph.yaml && mustache ../../config/$NETWORK.js src/constants/index.template.ts > src/constants/index.ts && graph codegen",
+    "generate": "mustache ../config/$NETWORK.js template.yaml > subgraph.yaml && mustache ../config/$NETWORK.js src/constants/index.template.ts > src/constants/index.ts",
     "build": "graph build",
     "test": "graph test -r",
     "create-local": "graph create --node http://localhost:8020/ sushiswap/v3-ethereum",
